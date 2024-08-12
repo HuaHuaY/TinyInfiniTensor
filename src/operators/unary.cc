@@ -39,7 +39,31 @@ namespace infini
         // TODO：返回经过 clip 操作后的 shape
         // REF: https://onnx.ai/onnx/operators/onnx__Clip.html#clip-13
         // =================================== 作业 ===================================
-        return std::nullopt;
+
+        if (inputs.empty())
+        {
+            return std::nullopt;
+        }
+
+        vector<Shape> shapes;
+        for (const auto &input : inputs)
+        {
+            auto shape = input->getDims();
+            int rank = input->getRank();
+            for (int i = 0; i < rank; i++)
+            {
+                if (minValue.has_value() && shape[i] < minValue.value())
+                {
+                    shape[i] = minValue.value();
+                }
+                else if (maxValue.has_value() && shape[i] > maxValue.value())
+                {
+                    shape[i] = maxValue.value();
+                }
+            }
+            shapes.emplace_back(shape);
+        }
+        return shapes;
     }
 
     std::string ClipObj::toString() const
@@ -66,7 +90,53 @@ namespace infini
         // REF_FILE: src/core/operator.cc
         // REF: https://onnx.ai/onnx/operators/onnx__Cast.html#cast-21
         // =================================== 作业 ===================================
-        return {};
+
+        DataType dataType;
+        switch (castType)
+        {
+        case CastType::Float2Float16:
+            dataType = DataType::Float16;
+            break;
+        case CastType::Float2BFloat16:
+            dataType = DataType::BFloat16;
+            break;
+        case CastType::Float2Int64:
+        case CastType::Int322Int64:
+        case CastType::Uint82Int64:
+        case CastType::Uint322Int64:
+            dataType = DataType::Int64;
+            break;
+        case CastType::Float2Int32:
+        case CastType::Int162Int32:
+        case CastType::Int82Int32:
+        case CastType::Uint82Int32:
+        case CastType::Int642Int32:
+            dataType = DataType::Int32;
+            break;
+        case CastType::Float2Int16:
+        case CastType::Int322Int16:
+        case CastType::Int82Int16:
+            dataType = DataType::Int16;
+            break;
+        case CastType::Float2Int8:
+        case CastType::Int322Int8:
+            dataType = DataType::Int8;
+            break;
+        case CastType::Int322Float:
+        case CastType::Int162Float:
+        case CastType::Int82Float:
+        case CastType::Uint82Float:
+        case CastType::Int642Float:
+        case CastType::Float162Float:
+        case CastType::BFloat162Float:
+        case CastType::Float2Float:
+            dataType = DataType::Float32;
+            break;
+        case CastType::Int642Uint32:
+            dataType = DataType::UInt32;
+            break;
+        }
+        return vector(inputs.size(), dataType);
     }
 
     optional<vector<Shape>> CastObj::inferShape(const TensorVec &inputs)
@@ -75,7 +145,18 @@ namespace infini
         // TODO：返回经过 cast 操作后的 shape
         // REF: https://onnx.ai/onnx/operators/onnx__Cast.html#cast-21
         // =================================== 作业 ===================================
-        return std::nullopt;
+
+        if (inputs.empty())
+        {
+            return std::nullopt;
+        }
+
+        vector<Shape> shapes;
+        for (const auto &input : inputs)
+        {
+            shapes.emplace_back(input->getDims());
+        }
+        return shapes;
     }
 
     std::string CastObj::toString() const

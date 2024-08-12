@@ -8,7 +8,8 @@
 #include <map>
 #include <unordered_set>
 
-namespace infini {
+namespace infini
+{
   class Allocator
   {
   private:
@@ -27,6 +28,17 @@ namespace infini {
     // TODO：可能需要设计一个数据结构来存储free block，以便于管理和合并
     // HINT: 可以使用一个 map 来存储 free block，key 为 block 的起始/结尾地址，value 为 block 的大小
     // =================================== 作业 ===================================
+    struct FreeBlock
+    {
+      size_t addr;
+      size_t size;
+      FreeBlock *next;
+
+      FreeBlock() : addr(0), size(0), next(nullptr) {}
+      FreeBlock(size_t addr, size_t size) : addr(addr), size(size), next(nullptr) {}
+    };
+
+    FreeBlock head;
 
   public:
     Allocator(Runtime runtime);

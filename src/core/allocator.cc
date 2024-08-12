@@ -33,7 +33,42 @@ namespace infini
         // TODO: 设计一个算法来分配内存，返回起始地址偏移量
         // =================================== 作业 ===================================
 
-        return 0;
+        used += size;
+        size_t res = SIZE_MAX;
+        FreeBlock *p = &head;
+        while (p->next)
+        {
+            if (p->next->size > size)
+            {
+                res = p->next->addr;
+                p->next->addr += size;
+                break;
+            }
+            else if (p->next->size == size)
+            {
+                FreeBlock *tmp = p->next;
+                res = tmp->addr;
+                p->next = tmp->next;
+                tmp->next = nullptr;
+                delete tmp;
+                break;
+            }
+            else if (p->next->addr + p->next->size == peak)
+            {
+                peak -= p->next->size;
+                delete p->next;
+                p->next = nullptr;
+                break;
+            }
+            p = p->next;
+        }
+        if (res == SIZE_MAX)
+        {
+            res = peak;
+            peak += size;
+        }
+
+        return res;
     }
 
     void Allocator::free(size_t addr, size_t size)
@@ -44,6 +79,48 @@ namespace infini
         // =================================== 作业 ===================================
         // TODO: 设计一个算法来回收内存
         // =================================== 作业 ===================================
+
+        used -= size;
+        FreeBlock *p = &head;
+        while (p)
+        {
+            if (!p->next)
+            {
+                if (p != &head && p->addr + p->size == addr)
+                {
+                    p->size += size;
+                    return;
+                }
+                p->next = new FreeBlock(addr, size);
+                return;
+            }
+            if (addr + size > p->next->addr)
+            {
+                p = p->next;
+                continue;
+            }
+
+            if (addr + size == p->next->addr)
+            {
+                p->next->addr = addr;
+                p->next->size += size;
+            }
+            else
+            {
+                FreeBlock *tmp = p->next;
+                p->next = new FreeBlock(addr, size);
+                p->next->next = tmp;
+            }
+            if (p != &head && p->addr + p->size == p->next->addr)
+            {
+                FreeBlock *tmp = p->next;
+                p->size += tmp->size;
+                p->next = tmp->next;
+                tmp->next = nullptr;
+                delete tmp;
+            }
+            return;
+        }
     }
 
     void *Allocator::getPtr()

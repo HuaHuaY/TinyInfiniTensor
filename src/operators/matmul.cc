@@ -27,7 +27,53 @@ namespace infini
         // TODO：返回经过 matmul 操作后的 shape
         // REF: https://github.com/onnx/onnx/blob/main/docs/Operators.md#gemm
         // =================================== 作业 ===================================
-        return std::nullopt;
+        const auto &shapeA = inputs[0]->getDims();
+        const auto &shapeB = inputs[1]->getDims();
+        Shape result;
+
+        int i = 0;
+        size_t size = shapeA.size();
+        auto fn = [shapeA, shapeB, &result](int i)
+        {
+            if (shapeA[i] == 1)
+            {
+                result.emplace_back(shapeB[i]);
+            }
+            else
+            {
+                result.emplace_back(shapeA[i]);
+            }
+        };
+        switch (size)
+        {
+        case 4:
+            fn(i++);
+        case 3:
+            fn(i++);
+        default:
+            if (transA)
+            {
+                m = shapeA[i + 1];
+                k = shapeA[i];
+            }
+            else
+            {
+                m = shapeA[i];
+                k = shapeA[i + 1];
+            }
+            if (transB)
+            {
+                n = shapeB[i];
+            }
+            else
+            {
+                n = shapeB[i + 1];
+            }
+        }
+
+        result.emplace_back(m);
+        result.emplace_back(n);
+        return optional<vector<Shape>>({result});
     }
 
 } // namespace infini
